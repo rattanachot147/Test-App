@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Preview</title>
+    <!-- Tailwind CSS for Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f3f4f6; /* Gray-100 for screen background */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* A4 Paper Dimensions */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm 15mm; /* Margins */
+            margin: 10mm auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Grid Lines for Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 120px 1fr 120px 1fr; /* Label Value Label Value */
+            border-top: 1px solid #e5e7eb;
+            border-left: 1px solid #e5e7eb;
+        }
+        .form-cell {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .form-label {
+            background-color: #f9fafb; /* Gray-50 */
+            font-weight: 600;
+            color: #374151;
+        }
+        .form-value {
+            color: #111827;
+            font-weight: 500;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0; /* Let the .page padding handle margins */
+            }
+            body {
+                background: white;
+                margin: 0;
+            }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+                page-break-after: always;
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* Force background colors to print */
+            .bg-gray-50 { background-color: #f9fafb !important; }
+            .bg-slate-100 { background-color: #f1f5f9 !important; }
+            .bg-slate-50 { background-color: #f8fafc !important; } /* Added Slate-50 support */
+        }
+
+        /* Timeline Styling for Print */
+        .timeline-item {
+            position: relative;
+            padding-left: 20px;
+            padding-bottom: 15px;
+            border-left: 2px solid #e5e7eb;
+        }
+        .timeline-item:last-child {
+            border-left: none;
+            padding-bottom: 0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #9ca3af;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toolbar (Hidden on Print) -->
+    <div class="no-print fixed top-0 left-0 right-0 bg-slate-800 text-white p-4 flex justify-between items-center shadow-lg z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-white/10 p-2 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm">Print Preview</h1>
+                <p class="text-xs text-slate-400">A4 Document Layout</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.close()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors">ปิดหน้าต่าง</button>
+            <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                สั่งพิมพ์ (Print)
+            </button>
+        </div>
+    </div>
+
+    <!-- A4 Page Container -->
+    <div class="page">
+        
+        <!-- 1. HEADER -->
+        <header class="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
+            <div class="flex items-center gap-4">
+                <!-- Logo Placeholder -->
+                <? if (data.logoUrl) { ?>
+                    <img src="<?= data.logoUrl ?>" class="h-16 w-auto object-contain" alt="Logo">
+                <? } else { ?>
+                    <div class="h-16 w-16 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400">
+                        <span class="text-xs font-bold">NO LOGO</span>
+                    </div>
+                <? } ?>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900 leading-none mb-1">ใบคำร้อง / บันทึกแจ้งงาน</h1>
+                    <p class="text-sm text-slate-500">Request / Job Sheet Form</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="inline-block border-2 border-slate-800 px-4 py-2 rounded-lg mb-2">
+                    <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider">TICKET NO.</span>
+                    <span class="block text-xl font-mono font-black text-slate-900 tracking-widest"><?= data.ticketId ?></span>
+                </div>
+                <p class="text-xs text-slate-400">พิมพ์เมื่อ: <?= new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) ?></p>
+            </div>
+        </header>
+
+        <!-- 2. MAIN INFORMATION (GRID) -->
+        <section class="mb-8">
+            <h2 class="text-sm font-bold text-slate-800 uppercase border-l-4 border-indigo-600 pl-2 mb-3">ข้อมูลทั่วไป (General Information)</h2>
+            <div class="form-grid rounded-lg overflow-hidden border border-slate-200">
+                
+                <!-- Row 1 -->
+                <div class="form-cell form-label">วันที่แจ้ง (Date)</div>
+                <div class="form-cell form-value"><?= data.date ?></div>
+                <div class="form-cell form-label">ประเภท (Type)</div>
+                <div class="form-cell form-value"><?= data.type ?></div>
+
+                <!-- Row 2 -->
+                <div class="form-cell form-label">ผู้แจ้ง (Requester)</div>
+                <div class="form-cell form-value"><?= data.requester || '-' ?></div>
+                <div class="form-cell form-label">สถานะ (Status)</div>
+                <div class="form-cell form-value">
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-bold border bg-white text-slate-800 border-slate-300">
+                        <?= data.status ?>
+                    </span>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="form-cell form-label">สถานที่ (Location)</div>
+                <div class="form-cell form-value col-span-3"><?= data.location ?></div>
+
+                <!-- Row 4 -->
+                <div class="form-cell form-label">หัวข้อ (Topic)</div>
+                <div class="form-cell form-value col-span-3 font-bold text-lg"><?= data.topic ?></div>
+            </div>
+        </section>
+
+        <!-- 3. DETAILS DESCRIPTION -->
+        <section class="mb-8">
+            <h2 class="text-sm font-bold text-slate-800 uppercase border-l-4 border-indigo-600 pl-2 mb-3">รายละเอียด (Description)</h2>
+            <!-- UPDATED: Changed from bg-blue-50 to bg-slate-50 (Gray Box) to match user request -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div class="text-slate-600 text-sm leading-relaxed whitespace-pre-line break-words max-h-[250px] overflow-y-auto custom-scrollbar pr-2"><?= data.details ? data.details.toString().trim() : '-' ?></div>
+            </div>
+        </section>
+
+        <!-- 4. ATTACHMENTS (UPDATED FOR MULTIPLE FILES) -->
+        <? if (data.fileUrl) { 
+             var urls = data.fileUrl.toString().split(',').filter(function(u) { return u.trim() !== ''; });
+             if (urls.length > 0) {
+        ?>
+        <section class="mb-8 break-inside-avoid">
+            <h2 class="text-sm font-bold text-slate-800 uppercase border-l-4 border-indigo-600 pl-2 mb-3">หลักฐาน / รูปภาพ (Attachments)</h2>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div class="flex flex-wrap gap-4 justify-start">
+                    <? for (var i = 0; i < urls.length; i++) { 
+                         var url = urls[i].trim();
+                    ?>
+                    <div class="relative group" style="width: 48%; max-width: 300px;">
+                        <img src="<?= url ?>" class="h-48 w-full object-contain rounded border border-slate-300 shadow-sm bg-white" alt="Attachment <?= i + 1 ?>" 
+                             onerror="this.onerror=null; this.parentNode.innerHTML='<div class=\'h-48 w-full flex flex-col items-center justify-center border border-slate-300 rounded bg-white text-slate-400 p-4 text-center\'><span class=\'text-xs italic\'>ไฟล์แนบไม่ใช่รูปภาพ</span><span class=\'text-[10px] mt-1 break-all text-indigo-500\'>' + '<?= url ?>'.substring(0, 30) + '...' + '</span></div>'">
+                         <p class="text-[10px] text-slate-400 mt-1 text-center">รูปที่ <?= i + 1 ?></p>
+                    </div>
+                    <? } ?>
+                </div>
+            </div>
+        </section>
+        <? } } ?>
+
+        <!-- 5. HISTORY LOG (COMPACT) -->
+        <section class="mb-8 break-inside-avoid">
+            <h2 class="text-sm font-bold text-slate-800 uppercase border-l-4 border-indigo-600 pl-2 mb-3">ประวัติการดำเนินการ (History Log)</h2>
+            <!-- UPDATED: Wrapped content in Gray Box structure -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div class="pl-2">
+                    <? if (data.comments && data.comments.length > 0) { ?>
+                        <? var logs = data.comments.split('\n\n'); ?>
+                        <? for (var i = 0; i < logs.length; i++) { 
+                            var log = logs[i];
+                            if(!log.trim()) continue;
+                            // Simple parsing to extract timestamp
+                            var parts = log.match(/^\[(.*?)\]: (.*)$/s);
+                            var time = parts ? parts[1] : '-';
+                            var msg = parts ? parts[2] : log;
+                        ?>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <p class="text-xs text-slate-500 font-mono mb-0.5"><?= time ?></p>
+                                <p class="text-sm text-slate-700"><?= msg ?></p>
+                            </div>
+                        <? } ?>
+                    <? } else { ?>
+                        <p class="text-sm text-slate-400 italic pl-4">- ไม่มีประวัติ -</p>
+                    <? } ?>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. FOOTER SIGNATURES (Fixed at bottom of content flow) -->
+        <div class="mt-12 pt-8 border-t-2 border-slate-200 break-inside-avoid">
+            <div class="grid grid-cols-3 gap-8 text-center">
+                
+                <!-- Sign 1: Requester -->
+                <div>
+                    <div class="h-16 border-b border-slate-300 mb-2"></div>
+                    <p class="text-sm font-bold text-slate-700">ผู้แจ้ง / ผู้ร้องขอ</p>
+                    <p class="text-xs text-slate-400">(Requester)</p>
+                    <p class="text-xs text-slate-400 mt-1">วันที่: _____/_____/_____</p>
+                </div>
+
+                <!-- Sign 2: Receiver/Operator -->
+                <div>
+                    <div class="h-16 border-b border-slate-300 mb-2"></div>
+                    <p class="text-sm font-bold text-slate-700">ผู้รับเรื่อง / ผู้ดำเนินการ</p>
+                    <p class="text-xs text-slate-400">(Operator)</p>
+                    <p class="text-xs text-slate-400 mt-1">วันที่: _____/_____/_____</p>
+                </div>
+
+                <!-- Sign 3: Approver (Optional) -->
+                <div>
+                    <div class="h-16 border-b border-slate-300 mb-2"></div>
+                    <p class="text-sm font-bold text-slate-700">ผู้อนุมัติ / ปิดงาน</p>
+                    <p class="text-xs text-slate-400">(Approver)</p>
+                    <p class="text-xs text-slate-400 mt-1">วันที่: _____/_____/_____</p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

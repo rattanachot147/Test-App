@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Basic styles */
+      body { font-family: 'Sarabun', 'Noto Sans JP', 'Noto Sans Myanmar', sans-serif; }
+      .hidden { display: none; }
+      
+      /* Spinner animation */
+      .spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; width: 1.25rem; height: 1.25rem; animation: spin 1s ease-in-out infinite; }
+      .spinner-dark { border: 2px solid rgba(79, 70, 229, 0.2); border-radius: 50%; border-top-color: #4f46e5; width: 1.25rem; height: 1.25rem; animation: spin 1s ease-in-out infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      
+      /* Screen reader only class */
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+      
+      /* Smooth Transitions */
+      .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+      
+      /* Blob Animation (Removed from usage but styles kept for safety or re-enabling) */
+      @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+      }
+      .animate-blob { animation: blob 7s infinite; }
+      .animation-delay-2000 { animation-delay: 2s; }
+    </style>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+Myanmar:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<!-- Modified: Adjusted top padding (pt-14) on mobile to clear space for flags -->
+<body class="bg-gray-50 flex items-start justify-center min-h-screen px-4 pt-14 pb-6 md:px-8 md:pt-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+
+    <!-- Pre-calculate logic for cleaner template -->
+    <? var isAnyEnabled = formConfig.enableComplaint || formConfig.enableSuggestion || formConfig.enableReport; ?>
+
+    <!-- Language Flags & Manual Button Container -->
+    <div class="absolute top-1 right-2 md:top-4 md:right-6 z-20 flex flex-col items-end gap-2">
+        <!-- Flags Row -->
+        <div class="flex items-center gap-3 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg shadow-slate-200/50 border border-white">
+            <!-- Thai Flag -->
+            <a href="<?= webAppUrl ?>?lang=th" title="ภาษาไทย" data-lang="th" class="lang-flag block w-9 h-9 rounded-full overflow-hidden transition-smooth transform hover:scale-110 focus:outline-none border-2 border-transparent hover:border-indigo-300">
+                <img src="https://lh3.googleusercontent.com/d/1RzS_7QjWuXTjg7wqUxtdVocn1cgP48nU" alt="Thai Flag" class="w-full h-full object-cover">
+            </a>
+            <!-- Japanese Flag -->
+            <a href="<?= webAppUrl ?>?lang=jp" title="日本語" data-lang="jp" class="lang-flag block w-9 h-9 rounded-full overflow-hidden transition-smooth transform hover:scale-110 focus:outline-none border-2 border-transparent hover:border-indigo-300">
+                <img src="https://lh3.googleusercontent.com/d/1DB0NLZ4A50l1yAYITQN5S7LQJmW9tIw7" alt="Japanese Flag" class="w-full h-full object-cover">
+            </a>
+            <!-- Myanmar Flag -->
+            <a href="<?= webAppUrl ?>?lang=my" title="မြန်မာ" data-lang="my" class="lang-flag block w-9 h-9 rounded-full overflow-hidden transition-smooth transform hover:scale-110 focus:outline-none border-2 border-transparent hover:border-indigo-300">
+                <img src="https://lh3.googleusercontent.com/d/1C8RN_eplVUcrtjCPMPFvmh7T1ho7WceO" alt="Myanmar Flag" class="w-full h-full object-cover">
+            </a>
+        </div>
+
+        <!-- Manual Button -->
+        <button id="openManualBtn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full shadow-md text-xs font-bold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-800 transition-smooth border border-white/60">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span><?= t.manualBtn || 'วิธีใช้งาน' ?></span>
+        </button>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="w-full max-w-2xl relative z-10 my-4 mt-8 md:mt-4">
+        
+        <!-- CARD CONTAINER -->
+        <div id="form-container" class="bg-white rounded-[2.5rem] shadow-xl shadow-black/20 border border-slate-200 backdrop-blur-sm overflow-hidden">
+            
+            <!-- 1. HEADER SECTION -->
+            <div class="relative bg-gradient-to-b from-indigo-50/80 to-white px-8 pt-6 pb-6 text-center border-b border-slate-50">
+                <? if (logoUrl) { ?>
+                  <div class="mb-3 inline-block p-3 rounded-3xl bg-white/60 shadow-sm backdrop-blur-sm">
+                      <img src="<?= logoUrl ?>" alt="Company Logo" class="h-16 w-auto object-contain" onerror="this.style.display='none'"> 
+                  </div>
+                <? } ?>
+                <h1 id="form-title" class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight cursor-default select-none" title="Double click for Admin"><?= t.mainTitle ?></h1>
+                <p class="text-slate-400 mt-2 font-medium text-sm md:text-base"><?= t.subtitle ?></p>
+            </div>
+
+            <!-- 2. BODY SECTION -->
+            <div class="p-6 md:p-10 bg-white">
+                <!-- Complaint Form -->
+                <form id="complaintForm" class="space-y-6">
+                    
+                    <!-- Type Selection (Modern Cards) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1"><?= t.typeLabel ?></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            
+                            <!-- 1. Complaint Radio -->
+                            <div class="relative">
+                                <? if (formConfig.enableComplaint) { ?>
+                                    <input type="radio" name="type" value="คำร้องเรียน" id="type-complaint" class="hidden peer">
+                                    <label for="type-complaint" class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-rose-100 bg-rose-50/40 rounded-2xl cursor-pointer transition-smooth hover:border-rose-300 hover:bg-rose-50 peer-checked:border-rose-500 peer-checked:bg-rose-100 peer-checked:text-rose-800 peer-checked:shadow-lg peer-checked:shadow-rose-100 peer-checked:[&>div]:bg-white peer-checked:[&>div]:text-rose-500 peer-checked:[&>div]:scale-110 peer-checked:[&_span]:text-rose-800 group h-full">
+                                        <!-- Icon Container -->
+                                        <div class="w-10 h-10 rounded-full bg-white text-rose-400 shadow-sm flex items-center justify-center transition-smooth duration-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
+                                        <span class="font-bold text-sm md:text-base text-slate-700 group-hover:text-rose-700 peer-checked:text-rose-900 transition-colors duration-300"><?= t.complaintType ?></span>
+                                        <span class="text-[10px] md:text-xs font-medium mt-1 text-center leading-tight transition-colors duration-300 text-rose-400 group-hover:text-rose-600 peer-checked:text-rose-800">
+                                            <?= t.complaintDesc || '' ?>
+                                        </span>
+                                    </label>
+                                    <div class="absolute top-3 right-3 w-4 h-4 bg-white rounded-full opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100 transition-smooth shadow-sm">
+                                        <svg class="w-full h-full text-rose-500 p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                <? } else { ?>
+                                    <input type="radio" disabled class="hidden">
+                                    <label class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-slate-100 bg-slate-50 rounded-2xl cursor-not-allowed opacity-60 grayscale select-none h-full">
+                                        <div class="w-10 h-10 rounded-full bg-white text-slate-300 shadow-sm flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
+                                        <span class="font-bold text-sm md:text-base text-slate-400"><?= t.complaintType ?></span>
+                                        <span class="text-[10px] md:text-xs font-medium mt-1 text-center text-slate-400">
+                                            <?= t.tempClosedLabel || '(ปิดรับชั่วคราว)' ?>
+                                        </span>
+                                    </label>
+                                <? } ?>
+                            </div>
+
+                             <!-- 2. Suggestion Radio -->
+                             <div class="relative">
+                                <? if (formConfig.enableSuggestion) { ?>
+                                    <input type="radio" name="type" value="ข้อเสนอแนะ" id="type-suggestion" class="hidden peer">
+                                    <label for="type-suggestion" class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-sky-100 bg-sky-50/40 rounded-2xl cursor-pointer transition-smooth hover:border-sky-300 hover:bg-sky-50 peer-checked:border-sky-500 peer-checked:bg-sky-100 peer-checked:text-sky-800 peer-checked:shadow-lg peer-checked:shadow-sky-100 peer-checked:[&>div]:bg-white peer-checked:[&>div]:text-sky-500 peer-checked:[&>div]:scale-110 peer-checked:[&_span]:text-sky-800 group h-full">
+                                       <!-- Icon Container -->
+                                       <div class="w-10 h-10 rounded-full bg-white text-sky-400 shadow-sm flex items-center justify-center transition-smooth duration-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                       </div>
+                                       <span class="font-bold text-sm md:text-base text-slate-700 group-hover:text-sky-700 peer-checked:text-sky-900 transition-colors duration-300"><?= t.suggestionType ?></span>
+                                       <span class="text-[10px] md:text-xs font-medium mt-1 text-center leading-tight transition-colors duration-300 text-sky-400 group-hover:text-sky-600 peer-checked:text-sky-800">
+                                            <?= t.suggestionDesc || '' ?>
+                                       </span>
+                                    </label>
+                                    <div class="absolute top-3 right-3 w-4 h-4 bg-white rounded-full opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100 transition-smooth shadow-sm">
+                                        <svg class="w-full h-full text-sky-500 p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                <? } else { ?>
+                                    <input type="radio" disabled class="hidden">
+                                    <label class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-slate-100 bg-slate-50 rounded-2xl cursor-not-allowed opacity-60 grayscale select-none h-full">
+                                        <div class="w-10 h-10 rounded-full bg-white text-slate-300 shadow-sm flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <span class="font-bold text-sm md:text-base text-slate-400"><?= t.suggestionType ?></span>
+                                        <span class="text-[10px] md:text-xs font-medium mt-1 text-center text-slate-400">
+                                            <?= t.tempClosedLabel || '(ปิดรับชั่วคราว)' ?>
+                                        </span>
+                                    </label>
+                                <? } ?>
+                            </div>
+
+                            <!-- 3. Report Issue Radio -->
+                            <div class="relative">
+                                <? if (formConfig.enableReport) { ?>
+                                    <input type="radio" name="type" value="แจ้งปัญหา" id="type-report" class="hidden peer">
+                                    <label for="type-report" class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-amber-100 bg-amber-50/40 rounded-2xl cursor-pointer transition-smooth hover:border-amber-300 hover:bg-amber-50 peer-checked:border-amber-500 peer-checked:bg-amber-100 peer-checked:text-amber-800 peer-checked:shadow-lg peer-checked:shadow-amber-100 peer-checked:[&>div]:bg-white peer-checked:[&>div]:text-amber-500 peer-checked:[&>div]:scale-110 peer-checked:[&_span]:text-amber-800 group h-full">
+                                        <!-- Icon Container -->
+                                        <div class="w-10 h-10 rounded-full bg-white text-amber-400 shadow-sm flex items-center justify-center transition-smooth duration-300">
+                                            <!-- Gear Icon -->
+                                            <svg class="h-5 w-5" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.07095 0.650238C6.67391 0.650238 6.32977 0.925096 6.24198 1.31231L6.0039 2.36247C5.6249 2.47269 5.26335 2.62363 4.92436 2.81013L4.01335 2.23585C3.67748 2.02413 3.23978 2.07312 2.95903 2.35386L2.35294 2.95996C2.0722 3.2407 2.0232 3.6784 2.23493 4.01427L2.80942 4.92561C2.62307 5.2645 2.47227 5.62594 2.36216 6.00481L1.31209 6.24287C0.924883 6.33065 0.650024 6.6748 0.650024 7.07183V7.92897C0.650024 8.32601 0.924883 8.67015 1.31209 8.75794L2.36228 8.99603C2.47246 9.375 2.62335 9.73652 2.80979 10.0755L2.2354 10.9867C2.02367 11.3225 2.07267 11.7602 2.35341 12.041L2.95951 12.6471C3.24025 12.9278 3.67795 12.9768 4.01382 12.7651L4.92506 12.1907C5.26384 12.377 5.62516 12.5278 6.0039 12.6379L6.24198 13.6881C6.32977 14.0753 6.67391 14.3502 7.07095 14.3502H7.92809C8.32512 14.3502 8.66927 14.0753 8.75705 13.6881L8.99505 12.6383C9.37411 12.5282 9.73573 12.3773 10.0748 12.1909L10.986 12.7653C11.3218 12.977 11.7595 12.928 12.0403 12.6473L12.6464 12.0412C12.9271 11.7604 12.9761 11.3227 12.7644 10.9869L12.1902 10.076C12.3768 9.73688 12.5278 9.37515 12.638 8.99596L13.6879 8.75794C14.0751 8.67015 14.35 8.32601 14.35 7.92897V7.07183C14.35 6.6748 14.0751 6.33065 13.6879 6.24287L12.6381 6.00488C12.528 5.62578 12.3771 5.26414 12.1906 4.92507L12.7648 4.01407C12.9766 3.6782 12.9276 3.2405 12.6468 2.95975L12.0407 2.35366C11.76 2.07292 11.3223 2.02392 10.9864 2.23565L10.0755 2.80989C9.73622 2.62328 9.37437 2.47229 8.99505 2.36209L8.75705 1.31231C8.66927 0.925096 8.32512 0.650238 7.92809 0.650238H7.07095ZM4.92053 3.81251C5.44724 3.44339 6.05665 3.18424 6.71543 3.06839L7.07095 1.50024H7.92809L8.28355 3.06816C8.94267 3.18387 9.5524 3.44302 10.0794 3.81224L11.4397 2.9547L12.0458 3.56079L11.1882 4.92117C11.5573 5.44798 11.8164 6.0575 11.9321 6.71638L13.5 7.07183V7.92897L11.932 8.28444C11.8162 8.94342 11.557 9.55301 11.1878 10.0798L12.0453 11.4402L11.4392 12.0462L10.0787 11.1886C9.55192 11.5576 8.94241 11.8166 8.28355 11.9323L7.92809 13.5002H7.07095L6.71543 11.932C6.0569 11.8162 5.44772 11.5572 4.92116 11.1883L3.56055 12.046L2.95445 11.4399L3.81213 10.0794C3.4431 9.55266 3.18403 8.94326 3.06825 8.2845L1.50002 7.92897V7.07183L3.06818 6.71632C3.18388 6.05765 3.44283 5.44833 3.81171 4.92165L2.95398 3.561L3.56008 2.95491L4.92053 3.81251ZM9.02496 7.50008C9.02496 8.34226 8.34223 9.02499 7.50005 9.02499C6.65786 9.02499 5.97513 8.34226 5.97513 7.50008C5.97513 6.65789 6.65786 5.97516 7.50005 5.97516C8.34223 5.97516 9.02496 6.65789 9.02496 7.50008ZM9.92496 7.50008C9.92496 8.83932 8.83929 9.92499 7.50005 9.92499C6.1608 9.92499 5.07513 8.83932 5.07513 7.50008C5.07513 6.16084 6.1608 5.07516 7.50005 5.07516C8.83929 5.07516 9.92496 6.16084 9.92496 7.50008Z" fill="currentColor"/>
+                                            </svg>
+                                        </div>
+                                        <span class="font-bold text-sm md:text-base text-slate-700 group-hover:text-amber-700 peer-checked:text-amber-900 transition-colors duration-300"><?= t.reportType || 'แจ้งปัญหา' ?></span>
+                                        <span class="text-[10px] md:text-xs font-medium mt-1 text-center leading-tight transition-colors duration-300 text-amber-400 group-hover:text-amber-600 peer-checked:text-amber-800">
+                                            <?= t.reportDesc || '' ?>
+                                        </span>
+                                    </label>
+                                    <div class="absolute top-3 right-3 w-4 h-4 bg-white rounded-full opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100 transition-smooth shadow-sm">
+                                        <svg class="w-full h-full text-amber-500 p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                <? } else { ?>
+                                    <input type="radio" disabled class="hidden">
+                                    <label class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-slate-100 bg-slate-50 rounded-2xl cursor-not-allowed opacity-60 grayscale select-none h-full">
+                                        <div class="w-10 h-10 rounded-full bg-white text-slate-300 shadow-sm flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.07095 0.650238C6.67391 0.650238 6.32977 0.925096 6.24198 1.31231L6.0039 2.36247C5.6249 2.47269 5.26335 2.62363 4.92436 2.81013L4.01335 2.23585C3.67748 2.02413 3.23978 2.07312 2.95903 2.35386L2.35294 2.95996C2.0722 3.2407 2.0232 3.6784 2.23493 4.01427L2.80942 4.92561C2.62307 5.2645 2.47227 5.62594 2.36216 6.00481L1.31209 6.24287C0.924883 6.33065 0.650024 6.6748 0.650024 7.07183V7.92897C0.650024 8.32601 0.924883 8.67015 1.31209 8.75794L2.36228 8.99603C2.47246 9.375 2.62335 9.73652 2.80979 10.0755L2.2354 10.9867C2.02367 11.3225 2.07267 11.7602 2.35341 12.041L2.95951 12.6471C3.24025 12.9278 3.67795 12.9768 4.01382 12.7651L4.92506 12.1907C5.26384 12.377 5.62516 12.5278 6.0039 12.6379L6.24198 13.6881C6.32977 14.0753 6.67391 14.3502 7.07095 14.3502H7.92809C8.32512 14.3502 8.66927 14.0753 8.75705 13.6881L8.99505 12.6383C9.37411 12.5282 9.73573 12.3773 10.0748 12.1909L10.986 12.7653C11.3218 12.977 11.7595 12.928 12.0403 12.6473L12.6464 12.0412C12.9271 11.7604 12.9761 11.3227 12.7644 10.9869L12.1902 10.076C12.3768 9.73688 12.5278 9.37515 12.638 8.99596L13.6879 8.75794C14.0751 8.67015 14.35 8.32601 14.35 7.92897V7.07183C14.35 6.6748 14.0751 6.33065 13.6879 6.24287L12.6381 6.00488C12.528 5.62578 12.3771 5.26414 12.1906 4.92507L12.7648 4.01407C12.9766 3.6782 12.9276 3.2405 12.6468 2.95975L12.0407 2.35366C11.76 2.07292 11.3223 2.02392 10.9864 2.23565L10.0755 2.80989C9.73622 2.62328 9.37437 2.47229 8.99505 2.36209L8.75705 1.31231C8.66927 0.925096 8.32512 0.650238 7.92809 0.650238H7.07095ZM4.92053 3.81251C5.44724 3.44339 6.05665 3.18424 6.71543 3.06839L7.07095 1.50024H7.92809L8.28355 3.06816C8.94267 3.18387 9.5524 3.44302 10.0794 3.81224L11.4397 2.9547L12.0458 3.56079L11.1882 4.92117C11.5573 5.44798 11.8164 6.0575 11.9321 6.71638L13.5 7.07183V7.92897L11.932 8.28444C11.8162 8.94342 11.557 9.55301 11.1878 10.0798L12.0453 11.4402L11.4392 12.0462L10.0787 11.1886C9.55192 11.5576 8.94241 11.8166 8.28355 11.9323L7.92809 13.5002H7.07095L6.71543 11.932C6.0569 11.8162 5.44772 11.5572 4.92116 11.1883L3.56055 12.046L2.95445 11.4399L3.81213 10.0794C3.4431 9.55266 3.18403 8.94326 3.06825 8.2845L1.50002 7.92897V7.07183L3.06818 6.71632C3.18388 6.05765 3.44283 5.44833 3.81171 4.92165L2.95398 3.561L3.56008 2.95491L4.92053 3.81251ZM9.02496 7.50008C9.02496 8.34226 8.34223 9.02499 7.50005 9.02499C6.65786 9.02499 5.97513 8.34226 5.97513 7.50008C5.97513 6.65789 6.65786 5.97516 7.50005 5.97516C8.34223 5.97516 9.02496 6.65789 9.02496 7.50008ZM9.92496 7.50008C9.92496 8.83932 8.83929 9.92499 7.50005 9.92499C6.1608 9.92499 5.07513 8.83932 5.07513 7.50008C5.07513 6.16084 6.1608 5.07516 7.50005 5.07516C8.83929 5.07516 9.92496 6.16084 9.92496 7.50008Z" fill="currentColor"/>
+                                            </svg>
+                                        </div>
+                                        <span class="font-bold text-sm md:text-base text-slate-400"><?= t.reportType || 'แจ้งปัญหา' ?></span>
+                                        <span class="text-[10px] md:text-xs font-medium mt-1 text-center text-slate-400">
+                                            <?= t.tempClosedLabel || '(ปิดรับชั่วคราว)' ?>
+                                        </span>
+                                    </label>
+                                <? } ?>
+                            </div>
+
+                        </div>
+                        
+                        <!-- NEW: Global Disabled Message -->
+                        <? if (!isAnyEnabled) { ?>
+                            <div class="text-center py-10 px-6 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center mt-8">
+                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                                </div>
+                                <h3 class="text-slate-800 font-bold text-lg mb-1"><?= t.allClosedTitle || 'ปิดรับเรื่องชั่วคราว' ?></h3>
+                                <p class="text-slate-500 text-sm"><?= t.allClosedMessage || 'ขออภัยในความไม่สะดวก ขณะนี้ระบบปิดรับคำร้องทุกประเภทชั่วคราว<br>กรุณาติดต่อเจ้าหน้าที่โดยตรง' ?></p>
+                            </div>
+                        <? } ?>
+                    </div>
+                    
+                    <!-- NEW: Wrap Input Fields with Config Condition -->
+                    <? if (isAnyEnabled) { ?>
+
+                        <!-- NEW: Phone Number Field (Hidden by default, shown for 'Report Issue') -->
+                        <div id="phone-container" class="hidden transition-all duration-300 ease-in-out">
+                             <label for="phone" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.phoneLabel || 'เบอร์โทรศัพท์ (Phone Number)' ?></label>
+                             <input type="tel" id="phone" name="phone" class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm md:text-base focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-smooth placeholder-slate-300" placeholder="<?= t.phonePlaceholder || '08x-xxx-xxxx' ?>">
+                             <p class="text-[10px] text-amber-500 mt-1 ml-1 flex items-center gap-1">
+                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                 <?= t.phoneRequiredMsg || '* จำเป็นสำหรับแจ้งปัญหา เพื่อให้เจ้าหน้าที่ติดต่อกลับสอบถามรายละเอียด' ?>
+                             </p>
+                        </div>
+                        
+                        <!-- NEW: Employee ID Field (Hidden by default, shown for 'Complaint') -->
+                        <div id="employee-id-container" class="hidden transition-all duration-300 ease-in-out">
+                             <label for="employeeId" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.employeeIdLabel || 'รหัสพนักงาน (Employee ID)' ?></label>
+                             <input type="text" id="employeeId" name="employeeId" class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm md:text-base focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-smooth placeholder-slate-300" placeholder="<?= t.employeeIdPlaceholder || 'รหัสพนักงาน (ถ้ามี)' ?>">
+                             <p class="text-[10px] text-slate-400 mt-1 ml-1 flex items-center gap-1">
+                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                 <?= t.employeeIdHint || 'ระบุเพื่อการติดตามผลภายใน (ไม่บังคับ)' ?>
+                             </p>
+                        </div>
+
+                        <!-- Compact Grid for Topic & Location -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Topic Input -->
+                            <div>
+                                <label for="topic" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.topicLabel ?></label>
+                                <!-- UPDATED: Use translation for placeholder -->
+                                <input type="text" id="topic" name="topic" class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm md:text-base focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-smooth placeholder-slate-300" placeholder="<?= t.topicPlaceholder || 'เรื่อง...' ?>" required>
+                            </div>
+                            <!-- Location Input -->
+                            <div>
+                                <label for="location" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.locationLabel ?></label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    </span>
+                                    <input type="text" id="location" name="location" placeholder="<?= t.locationPlaceholder ?>" class="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm md:text-base focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-smooth placeholder-slate-300" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Details Textarea -->
+                        <div>
+                            <label for="details" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.detailsLabel ?></label>
+                            <!-- UPDATED: Use translation for placeholder -->
+                            <textarea id="details" name="details" rows="4" class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm md:text-base focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-smooth placeholder-slate-300 resize-none" placeholder="<?= t.detailsPlaceholder || 'รายละเอียดเพิ่มเติม...' ?>" required></textarea>
+                        </div>
+
+                        <!-- Attachment Upload -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.attachmentLabel ?></label>
+                            <!-- Upload Button Container -->
+                            <!-- Modified: Changed from large drag-drop box to a compact button style -->
+                            <div id="upload-container">
+                                <label for="attachment" class="cursor-pointer flex items-center w-full p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-400 hover:shadow-md transition-all group">
+                                    <div class="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-105 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3 text-left">
+                                        <p class="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors"><?= t.uploadFile ?></p>
+                                        <!-- Modified Label for Multiple Files -->
+                                        <p class="text-xs text-slate-400">PNG, JPG, PDF (Max 5MB per file)</p>
+                                    </div>
+                                    <!-- Modified: Added 'multiple' and 'accept' attribute for camera/files -->
+                                    <input id="attachment" name="attachment" type="file" class="sr-only" multiple accept="image/*, application/pdf">
+                                </label>
+                            </div>
+                            <!-- File Info Display Container (Hidden initially) -->
+                            <div id="file-info-container" class="hidden mt-3 bg-indigo-50 border border-indigo-100 p-3 rounded-xl space-y-2"></div>
+                        </div>
+
+                        <!-- Consent Checkbox -->
+                        <div class="pt-2">
+                            <label class="flex items-start gap-3 cursor-pointer group">
+                                <div class="relative flex items-start pt-0.5">
+                                    <input type="checkbox" id="consentCheckbox" class="peer sr-only">
+                                    <div class="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-smooth"></div>
+                                    <svg class="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 top-1 left-0.5 transition-smooth pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <!-- Consent text now comes from translations -->
+                                <span class="text-sm text-slate-500 group-hover:text-slate-700 transition-colors select-none leading-tight"><?= t.consentText ?></span>
+                            </label>
+                        </div>
+                    <? } ?>
+                    <!-- End Wrap -->
+
+                    <!-- Form Error Message Area -->
+                    <p id="form-error" class="hidden p-3 bg-red-50 text-red-500 text-sm font-bold text-center rounded-xl border border-red-100 animate-pulse mt-2"></p>
+                </form>
+            </div>
+            
+            <!-- ... (Footer Section Remains Same) ... -->
+             <!-- 3. FOOTER SECTION (Buttons) -->
+            <!-- Modified: Increased pb-3 to pb-10 to move buttons up from the bottom edge -->
+            <div class="px-6 md:px-10 pb-10 pt-2 bg-white">
+                 <!-- Button Group Container -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Secondary Button: Check Status -->
+                    <button type="button" id="openCheckStatusModalBtn" class="order-2 sm:order-1 w-full flex justify-center items-center gap-2 bg-white text-indigo-600 font-bold py-3.5 px-6 rounded-xl border-2 border-indigo-100 hover:border-indigo-300 hover:bg-indigo-50/50 hover:shadow-lg hover:shadow-indigo-100/50 transition-smooth text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <!-- MODIFIED: Use translated text for Check Status button -->
+                        <span><?= t.checkStatusBtn || 'ตรวจสอบสถานะ' ?></span>
+                    </button>
+                    
+                    <!-- Primary Button: Submit -->
+                    <? if (isAnyEnabled) { ?>
+                        <button type="submit" id="submitBtn" form="complaintForm" class="order-1 sm:order-2 w-full flex justify-center items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3.5 px-6 rounded-xl hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5 transition-smooth text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0" disabled>
+                            <span id="submitBtnText" class="flex items-center gap-2">
+                                <span><?= t.submitButton ?></span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                            </span>
+                            <div id="submitSpinner" class="spinner hidden"></div>
+                        </button>
+                    <? } ?>
+                </div>
+                 
+                <!-- MODIFIED: Removed Admin Link div entirely -->
+            </div>
+
+        </div>
+        <!-- ===== END: CARD CONTAINER ===== -->
+
+    </div>
+
+    <!-- ... (Modals remain same) ... -->
+    <!-- ===== START: MODIFICATION (Updated Success Modal v13) ===== -->
+    <!-- Success Modal (Pastel Style) -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-opacity">
+        <!-- MODIFIED: 
+             1. Removed 'md:max-w-2xl' to revert to original narrow width (max-w-md) on Notebook.
+             2. Changed 'max-h-[90vh]' to 'max-h-[95vh]' to allow more vertical space.
+        -->
+        <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl shadow-indigo-500/20 text-center w-[90%] md:w-full max-w-md border border-white/50 transform scale-100 transition-transform max-h-[95vh] overflow-y-auto">
+            <!-- MODIFIED: Responsive size (Small on mobile, Normal on desktop) -->
+            <!-- w-16 h-16 (Mobile) -> md:w-20 md:h-20 (Desktop) -->
+            <!-- mb-4 (Mobile) -> md:mb-6 (Desktop) -->
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner">
+                <!-- MODIFIED: Responsive icon size -->
+                <!-- h-8 w-8 (Mobile) -> md:h-10 md:w-10 (Desktop) -->
+                <svg class="h-8 w-8 md:h-10 md:w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800"><?= t.successTitle ?></h2>
+            <p class="mt-2 text-slate-500"><?= t.successMessage ?></p>
+            
+            <!-- ===== START: NEW ALERT BOX (WITH TRANSLATION) ===== -->
+            <div class="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3 text-left">
+                <div class="p-1.5 bg-amber-100 text-amber-600 rounded-lg flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <div>
+                    <!-- MODIFIED: Added translation support for alert box -->
+                    <h4 class="text-sm font-bold text-amber-700"><?= t.screenshotAlertTitle || 'กรุณาแคปหน้าจอเก็บไว้ (Screenshot)' ?></h4>
+                    <p class="text-xs text-amber-600 mt-0.5"><?= t.screenshotAlertMessage || 'รหัสลับ (Access Key) นี้จะแสดงให้เห็นเพียงครั้งเดียว หากสูญหายจะไม่สามารถตรวจสอบสถานะได้' ?></p>
+                </div>
+            </div>
+            <!-- ===== END: NEW ALERT BOX ===== -->
+
+            <!-- Show Ticket ID and Access Key -->
+            <!-- MODIFIED: Reduced padding (p-6 -> p-4) and changed rounded-2xl -> rounded-xl for compactness -->
+            <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 text-left relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div> <!-- Accent Strip -->
+                
+                <!-- (1) อัปเดตข้อความเตือน (v13) -->
+                <!-- MODIFIED: Use translation for Save Info Label -->
+                <!-- MODIFIED: Reduced margin bottom (mb-4 -> mb-2) -->
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <?= t.saveInfoLabel || 'บันทึกข้อมูลนี้ไว้ (Save This)' ?>
+                </p>
+                
+                <!-- MODIFIED: Reduced vertical space (space-y-4 -> space-y-2) -->
+                <div class="space-y-2">
+                    <div>
+                        <!-- MODIFIED: Use translation for Ticket ID Label -->
+                        <label class="text-[10px] text-slate-500 font-medium"><?= t.ticketIdLabel || 'เลขที่คำร้อง (Ticket ID)' ?></label>
+                        <!-- MODIFIED: Reduced font size (text-xl -> text-lg) -->
+                        <p id="success-ticket-id" class="text-lg font-bold text-slate-800 break-words tracking-tight font-mono leading-tight">...</p>
+                    </div>
+                    <div>
+                        <!-- MODIFIED: Use translation for Access Key Label -->
+                        <label class="text-[10px] text-slate-500 font-medium"><?= t.accessKeyLabel || 'รหัสลับ (Access Key)' ?></label>
+                        <!-- MODIFIED: Reduced font size (text-xl -> text-lg) -->
+                        <p id="success-access-key" class="text-lg font-bold text-red-500 break-words tracking-tight font-mono leading-tight">...</p>
+                    </div>
+                </div>
+                
+                <!-- (2) เพิ่มปุ่มคัดลอก (v13) -->
+                <!-- MODIFIED: Reduced top margin (mt-6 -> mt-3), padding (py-3 -> py-2), and added text-sm -->
+                <button type="button" id="copySuccessBtn" onclick="copySuccessDetails()" class="mt-3 w-full flex justify-center items-center gap-2 bg-white text-indigo-600 font-bold py-2 px-4 rounded-lg border border-indigo-100 hover:border-indigo-300 hover:bg-indigo-50 transition-smooth shadow-sm text-sm">
+                    <svg id="copy-icon-svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    <svg id="check-icon-svg" class="h-4 w-4 hidden text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <!-- MODIFIED: Use translation for Copy Button -->
+                    <span id="copyBtnText"><?= t.copyBtn || 'คัดลอกข้อมูล' ?></span>
+                </button>
+            
+            </div>
+            <!-- END: Show Ticket ID -->
+            
+            <!-- Confirmation Checkbox -->
+            <div class="mt-6">
+                <label class="flex items-center gap-3 cursor-pointer group justify-center">
+                    <div class="relative flex items-start">
+                        <input type="checkbox" id="confirm-save-checkbox" class="peer sr-only">
+                        <div class="w-5 h-5 border-2 border-slate-300 rounded-md peer-checked:bg-green-500 peer-checked:border-green-500 transition-smooth"></div>
+                        <svg class="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 top-1 left-0.5 transition-smooth pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-sm text-slate-500 group-hover:text-slate-700 transition-colors select-none font-medium">
+                        <?= t.confirmSaveLabel || 'ข้าพเจ้าได้บันทึกข้อมูลเรียบร้อยแล้ว' ?>
+                    </span>
+                </label>
+            </div>
+
+            <!-- MODIFIED: Use translation for Success/Close Button -->
+            <button id="success-close-btn" onclick="closeSuccessModal()" class="mt-4 w-full bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-slate-900 hover:shadow-lg transition-smooth shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none" disabled>
+                <?= t.successButton || 'ส่งเรื่องเพิ่มเติม' ?>
+            </button>
+        </div>
+    </div>
+    <!-- ===== END: MODIFICATION (Updated Success Modal v13) ===== -->
+
+
+    <!-- ===== START: NEW (Check Status Modal) ===== -->
+    <div id="check-status-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-opacity">
+        <!-- MODIFIED: Added max-h-[85vh] and flex flex-col to parent, reduced padding -->
+        <div class="bg-white rounded-[2rem] shadow-2xl shadow-indigo-500/20 w-full max-w-md border border-white/50 relative overflow-hidden flex flex-col max-h-[85vh]">
+            
+            <!-- ===== MODIFIED HEADER: Modern Gradient Style (No Pattern) ===== -->
+            <div class="px-8 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-between shadow-md z-10 relative flex-shrink-0">
+                <div class="flex items-center gap-4">
+                     <!-- Icon in translucent circle -->
+                     <div class="p-3 bg-white/20 backdrop-blur-md rounded-xl text-white shadow-inner">
+                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                     </div>
+                     <div>
+                         <!-- White text for contrast -->
+                         <h2 class="text-xl font-bold text-white"><?= t.checkStatusTitle || 'ตรวจสอบสถานะ' ?></h2>
+                         <p class="text-indigo-100 text-sm opacity-90"><?= t.checkStatusSubtitle || 'กรอกข้อมูลเพื่อค้นหา' ?></p>
+                     </div>
+                </div>
+                <!-- Close button style adjusted for dark background -->
+                <button id="closeCheckStatusModalBtn" onclick="resetCheckStatusForm()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-smooth">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <!-- ========================================================== -->
+            
+            <!-- Content Wrapper (Added overflow-y-auto and responsive padding) -->
+            <!-- MODIFIED: Added overflow-y-auto, flex-1, and responsive padding (p-6 md:p-8) -->
+            <div class="p-6 md:p-8 bg-white overflow-y-auto flex-1 custom-scrollbar">
+                
+                <!-- Form to check status -->
+                <div id="checkStatusFormContainer"> <!-- Added Container for toggling visibility -->
+                    <form id="checkStatusForm" class="space-y-5">
+                        <!-- Ticket ID field REMOVED -->
+                        <div>
+                            <label for="check-access-key" class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1"><?= t.accessKeyLabel || 'รหัสลับ (Access Key)' ?></label>
+                            <input type="text" id="check-access-key" class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-smooth" required>
+                        </div>
+                        <button type="submit" id="checkStatusSubmitBtn" class="w-full flex justify-center items-center gap-2 bg-indigo-600 text-white font-bold py-3.5 px-6 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 hover:-translate-y-0.5 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed">
+                            <!-- MODIFIED: Use translation variables for button text -->
+                            <span id="checkStatusBtnText"><?= t.checkBtn || 'ตรวจสอบ' ?></span>
+                            <div id="checkStatusSpinner" class="spinner hidden border-white"></div>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Area to show results -->
+                <div id="check-status-results-container" class="mt-0 hidden border-t-0 pt-0"> <!-- Removed margin/border for cleaner switch -->
+                    <!-- MODIFIED: Use translation for "Result" Header -->
+                    <div class="flex justify-between items-center mb-4">
+                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider"><?= t.checkStatusResultLabel || 'ผลการตรวจสอบ (Result)' ?></p>
+                         <button onclick="resetCheckStatusForm()" class="text-xs text-indigo-600 font-bold hover:underline"><?= t.newSearchBtn || 'ค้นหาใหม่ (New Search)' ?></button>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <!-- ===== START: MODIFICATION (Alert Stripe Style) ===== -->
+                    <div id="check-status-error" class="hidden p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-center font-medium text-sm animate-pulse mb-4"></div>
+                    <!-- ===== END: MODIFICATION (Alert Stripe Style) ===== -->
+                    
+                    <!-- Success Message -->
+                    <!-- ===== START: MODIFICATION (Removed static color classes AND ADDED 'border') ===== -->
+                    <div id="check-status-success" class="hidden p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-current opacity-20"></div> <!-- Decorative Strip -->
+                    <!-- ===== END: MODIFICATION (Removed static color classes AND ADDED 'border') ===== -->
+                        <!-- Success data will be injected here by JS -->
+                    </div>
+                </div>
+
+            </div> <!-- End Content Wrapper -->
+        </div>
+    </div>
+    <!-- ===== END: NEW (Check Status Modal) ===== -->
+
+
+    <!-- ===== START: NEW (User Manual Modal) ===== -->
+    <div id="manual-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-opacity">
+        <div class="bg-white p-8 rounded-[2rem] shadow-2xl shadow-indigo-500/20 w-full max-w-lg border border-white/50 relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl"></div>
+            
+            <div class="relative z-10">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
+                        <?= t.manualTitle || 'คู่มือการใช้งาน' ?>
+                    </h2>
+                    <button id="closeManualBtn" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-smooth">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Step 1 -->
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg shadow-sm border border-indigo-100">1</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700"><?= t.manualStep1Title || 'เลือกประเภทเรื่อง' ?></h4>
+                            <p class="text-sm text-slate-500 mt-1"><?= t.manualStep1Desc || 'เลือกหัวข้อที่ต้องการแจ้งให้ถูกต้อง (ร้องเรียน / เสนอแนะ / แจ้งปัญหา)' ?></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg shadow-sm border border-indigo-100">2</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700"><?= t.manualStep2Title || 'กรอกข้อมูลให้ครบถ้วน' ?></h4>
+                            <p class="text-sm text-slate-500 mt-1"><?= t.manualStep2Desc || 'ระบุหัวข้อ สถานที่ และรายละเอียดให้ชัดเจน เพื่อความรวดเร็วในการดำเนินการ' ?></p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg shadow-sm border border-indigo-100">3</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700"><?= t.manualStep3Title || 'แนบรูปภาพ (ถ้ามี)' ?></h4>
+                            <p class="text-sm text-slate-500 mt-1"><?= t.manualStep3Desc || 'สามารถแนบรูปภาพประกอบเพื่อให้เจ้าหน้าที่เข้าใจปัญหาได้ดียิ่งขึ้น' ?></p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg shadow-sm border border-indigo-100">4</div>
+                        <div>
+                            <h4 class="font-bold text-slate-700"><?= t.manualStep4Title || 'บันทึกรหัสติดตามผล' ?></h4>
+                            <p class="text-sm text-slate-500 mt-1"><?!= t.manualStep4Desc || 'เมื่อกดส่งข้อมูล ระบบจะแสดง <span class="font-bold text-indigo-600">เลขที่คำร้อง</span> และ <span class="font-bold text-red-500">รหัสลับ</span> กรุณาบันทึกไว้ตรวจสอบสถานะ' ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                    <button id="understoodBtn" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-smooth"><?= t.understoodBtn || 'เข้าใจแล้ว' ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===== END: NEW (User Manual Modal) ===== -->
+
+    <script>
+        // --- DOM Element References ---
+        const form = document.getElementById('complaintForm');
+        const successModal = document.getElementById('success-modal');
+        const formError = document.getElementById('form-error');
+        const submitBtn = document.getElementById('submitBtn');
+        const consentCheckbox = document.getElementById('consentCheckbox');
+        const fileInput = document.getElementById('attachment');
+        const fileInfoContainer = document.getElementById('file-info-container');
+        const uploadContainer = document.getElementById('upload-container');
+
+        // NEW: User Manual Elements
+        const openManualBtn = document.getElementById('openManualBtn');
+        const manualModal = document.getElementById('manual-modal');
+        const closeManualBtn = document.getElementById('closeManualBtn');
+        const understoodBtn = document.getElementById('understoodBtn');
+        
+        // NEW: Confirmation Checkbox Elements
+        const confirmSaveCheckbox = document.getElementById('confirm-save-checkbox');
+        const successCloseBtn = document.getElementById('success-close-btn');
+
+        // NEW: Phone Input Container Logic
+        const phoneContainer = document.getElementById('phone-container');
+        const phoneInput = document.getElementById('phone');
+        
+        // NEW: Employee ID Input Logic
+        const employeeIdContainer = document.getElementById('employee-id-container');
+        const employeeIdInput = document.getElementById('employeeId');
+
+        const typeRadios = document.querySelectorAll('input[name="type"]');
+        
+        // Helper to clear highlights
+        function clearAllHighlights() {
+            const inputs = [document.getElementById('phone'), document.getElementById('employeeId'), document.getElementById('topic')];
+            inputs.forEach(input => {
+                if(input) {
+                    input.classList.remove('ring-4', 'ring-indigo-300', 'border-indigo-500', 'transition-all', 'duration-500');
+                }
+            });
+        }
+
+        // Add event listeners to radio buttons
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                // 1. Clear previous highlights immediately
+                clearAllHighlights();
+
+                const val = e.target.value;
+                let targetScrollElement = null;
+                
+                // Reset Phone
+                if (phoneContainer) {
+                     if (val === 'แจ้งปัญหา') {
+                        phoneContainer.classList.remove('hidden');
+                        if (phoneInput) phoneInput.required = true;
+                        targetScrollElement = phoneContainer;
+                     } else {
+                        phoneContainer.classList.add('hidden');
+                        if (phoneInput) {
+                            phoneInput.required = false;
+                            phoneInput.value = ''; 
+                        }
+                     }
+                }
+
+                // Reset Employee ID
+                if (employeeIdContainer) {
+                     if (val === 'คำร้องเรียน') {
+                        employeeIdContainer.classList.remove('hidden');
+                        // Not required
+                        targetScrollElement = employeeIdContainer;
+                     } else {
+                        employeeIdContainer.classList.add('hidden');
+                        if (employeeIdInput) employeeIdInput.value = '';
+                     }
+                }
+
+                // If suggestion (or no specific container shown), target topic
+                if (val === 'ข้อเสนอแนะ') {
+                    // Find the topic input container or label
+                     const topicInput = document.getElementById('topic');
+                     if(topicInput) targetScrollElement = topicInput.parentElement; // Scroll to label/container
+                }
+
+                // Execute Scroll and Highlight
+                if (targetScrollElement) {
+                    setTimeout(() => {
+                        targetScrollElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Add temporary highlight/glow
+                        const inputField = targetScrollElement.querySelector('input');
+                        if (inputField) {
+                            // Re-add classes
+                            inputField.classList.add('ring-4', 'ring-indigo-300', 'border-indigo-500', 'transition-all', 'duration-500');
+                            
+                            // Remove after delay
+                            setTimeout(() => {
+                                inputField.classList.remove('ring-4', 'ring-indigo-300', 'border-indigo-500');
+                            }, 2000);
+                        }
+                        
+                    }, 150); // Small delay for layout reflow
+                }
+            });
+        });
+
+        // ===== START: INJECT TRANSLATIONS FOR JS =====
+        const sanitize = (str) => String(str).replace(/^"|"$/g, '');
+        const CURRENT_LANG = "<?= currentLang ?>";
+        // Fix: Inject Web App URL here to prevent quoting issues later
+        const WEB_APP_URL = "<?= webAppUrl ?>"; 
+
+        const LBL_TICKET_ID = sanitize(<?= JSON.stringify(t.ticketIdLabel || 'Ticket ID') ?>);
+        const LBL_DATE = sanitize(<?= JSON.stringify(t.dateLabel || 'Date') ?>);
+        const LBL_TYPE = sanitize(<?= JSON.stringify(t.typeLabel || 'Type') ?>);
+        const LBL_STATUS = sanitize(<?= JSON.stringify(t.statusLabel || 'Status') ?>);
+        const LBL_ADMIN_MSG = sanitize(<?= JSON.stringify(t.adminMessageLabel || 'Admin Message') ?>);
+        const MSG_FAIL = sanitize(<?= JSON.stringify(t.checkStatusFail || 'ไม่พบข้อมูล') ?>);
+        const LBL_COPY = sanitize(<?= JSON.stringify(t.copyBtn || 'คัดลอกข้อมูล') ?>);
+        const LBL_COPIED = sanitize(<?= JSON.stringify(t.copiedMsg || 'คัดลอกแล้ว!') ?>);
+        const LBL_COPY_FAIL = sanitize(<?= JSON.stringify(t.copyFailMsg || 'คัดลอกไม่สำเร็จ') ?>);
+        
+        const LBL_ADMIN_ATTACHMENTS = sanitize(<?= JSON.stringify(t.adminAttachmentsLabel || 'รูปภาพประกอบการดำเนินงาน (Attachments)') ?>);
+        const BTN_OPEN_FILE = sanitize(<?= JSON.stringify(t.openFileBtn || 'เปิดไฟล์') ?>);
+
+        // NEW: Inject Type Translations for Status Check
+        const TYPE_COMPLAINT_TRANS = sanitize(<?= JSON.stringify(t.complaintType || 'คำร้องเรียน') ?>);
+        const TYPE_SUGGESTION_TRANS = sanitize(<?= JSON.stringify(t.suggestionType || 'ข้อเสนอแนะ') ?>);
+        const TYPE_REPORT_TRANS = sanitize(<?= JSON.stringify(t.reportType || 'แจ้งปัญหา') ?>);
+
+        // ===== END: INJECT TRANSLATIONS FOR JS =====
+
+        // --- Profanity Filter ---
+        let profanityList = []; // Initialize as empty, will be populated from server
+
+        function containsProfanity(text) {
+            if (!text || profanityList.length === 0) return false;
+            const lowerCaseText = String(text).toLowerCase();
+            return profanityList.some(word => lowerCaseText.includes(word));
+        }
+
+        // --- Client-side Image Resizing Function (New) ---
+        function resizeImage(file, quality) { // Modified: Removed width/height params
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Modified: Removed resizing logic to keep original dimensions
+                        /* if (width > height) { ... } 
+                        */
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Compress to JPEG
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve({
+                            base64: dataUrl.split(',')[1],
+                            mimeType: 'image/jpeg', // Always convert to JPEG for compression
+                            fileName: file.name.replace(/\.[^/.]+$/, "") + ".jpg" // Change extension to jpg
+                        });
+                    };
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- Event Listeners ---
+        if (consentCheckbox) {
+             consentCheckbox.addEventListener('change', () => {
+                 if (submitBtn) {
+                      submitBtn.disabled = !consentCheckbox.checked || submitBtn.querySelector('.spinner:not(.hidden)'); 
+                 }
+             });
+        }
+        
+        // NEW: Confirmation Checkbox Listener
+        if (confirmSaveCheckbox && successCloseBtn) {
+            confirmSaveCheckbox.addEventListener('change', (e) => {
+                successCloseBtn.disabled = !e.target.checked;
+            });
+        }
+
+        // Display file info when files are selected
+        if (fileInput) {
+             fileInput.addEventListener('change', displayFileInfo);
+        }
+
+        // Handle form submission
+        if (form) {
+             form.addEventListener('submit', async (e) => { // Modified to async
+                 e.preventDefault();
+                 if (formError) formError.classList.add('hidden'); 
+                 setFormLoading(true); 
+
+                 // Get form data
+                 const formData = {
+                     type: form.type.value,
+                     topic: form.topic.value,
+                     details: form.details.value,
+                     location: form.location.value,
+                     // NEW: Get phone value
+                     phone: form.phone ? form.phone.value : '',
+                     // NEW: Get Employee ID
+                     employeeId: form.employeeId ? form.employeeId.value : ''
+                 };
+
+                 // ADDED: Validation for Type
+                 if (!formData.type) {
+                      onFormFailure({ message: 'กรุณาเลือกประเภทคำร้อง (Please select a type)' });
+                      return;
+                 }
+
+                 // Check profanity
+                 if (containsProfanity(formData.topic) || containsProfanity(formData.details) || containsProfanity(formData.location)) {
+                     onFormFailure({ message: '<?= t.profanityWarning || "กรุณาใช้ถ้อยคำสุภาพ" ?>' }); 
+                     return; 
+                 }
+
+                 const files = fileInput ? fileInput.files : [];
+                 let fileObjects = []; // Initialize array for file objects
+
+                 // Handle file uploads
+                 if (files.length > 0) {
+                     // Client-side file size check loop (Only strict check for non-images)
+                     for (let i = 0; i < files.length; i++) {
+                         if (!files[i].type.startsWith('image/') && files[i].size > 5 * 1024 * 1024) {
+                             onFormFailure({ message: `ไฟล์ "${files[i].name}" (PDF/อื่นๆ) มีขนาดเกิน 5MB` }); 
+                             return;
+                         }
+                     }
+
+                     // Create array of promises to read all files
+                     const filePromises = Array.from(files).map(file => {
+                         if (file.type.startsWith('image/')) {
+                              // Modified: Keep Original Size, 0.90 Quality (90%)
+                              return resizeImage(file, 0.90);
+                         } else {
+                              // Standard read for PDF or other types
+                              return new Promise((resolve, reject) => {
+                                 const reader = new FileReader();
+                                 reader.onload = (event) => resolve({
+                                     base64: event.target.result.split(',')[1],
+                                     mimeType: file.type,
+                                     fileName: file.name
+                                 });
+                                 reader.onerror = (err) => reject(err);
+                                 reader.readAsDataURL(file);
+                             });
+                         }
+                     });
+
+                     try {
+                         // Wait for all files to be read and resized
+                         fileObjects = await Promise.all(filePromises);
+                     } catch (err) {
+                         onFormFailure({ message: '<?= t.fileReadError || "เกิดข้อผิดพลาดในการอ่านไฟล์" ?>' });
+                         return;
+                     }
+                 }
+                 
+                 // Call server function with form data and array of file objects
+                 // Note: Server-side code will need update to handle array
+                 google.script.run
+                     .withSuccessHandler(onFormSuccess)
+                     .withFailureHandler(onFormFailure)
+                     .submitForm(formData, fileObjects.length > 0 ? fileObjects : null);
+             });
+        }
+
+        // --- Server Communication Callbacks ---
+        function onFormSuccess(response) {
+            setFormLoading(false); 
+            if (response && response.success) {
+                if (form) form.reset(); 
+                if (consentCheckbox) consentCheckbox.checked = false; 
+                if (submitBtn) submitBtn.disabled = true; 
+                clearFileInfo(); 
+                
+                // Hide Phone input again after reset
+                if (phoneContainer) phoneContainer.classList.add('hidden');
+                // Hide Employee ID input again after reset
+                if (employeeIdContainer) employeeIdContainer.classList.add('hidden');
+                
+                if (document.getElementById('success-ticket-id')) document.getElementById('success-ticket-id').textContent = response.ticketId || 'N/A';
+                if (document.getElementById('success-access-key')) document.getElementById('success-access-key').textContent = response.accessKey || 'N/A';
+                
+                // Reset Confirmation Checkbox
+                if (confirmSaveCheckbox) confirmSaveCheckbox.checked = false;
+                if (successCloseBtn) successCloseBtn.disabled = true;
+                
+                if (successModal) successModal.classList.remove('hidden'); 
+            } else {
+                if (formError) {
+                     formError.textContent = (response && response.message) ? response.message : 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                     formError.classList.remove('hidden');
+                }
+            }
+        }
+
+        function onFormFailure(error) {
+            setFormLoading(false); 
+            if (formError) {
+                 formError.textContent = (error && error.message) ? error.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+                 formError.classList.remove('hidden');
+            }
+        }
+
+        // --- UI Helper Functions ---
+        function setFormLoading(isLoading) {
+            const text = document.getElementById('submitBtnText');
+            const spinner = document.getElementById('submitSpinner');
+            if (submitBtn) submitBtn.disabled = isLoading || (consentCheckbox ? !consentCheckbox.checked : true); 
+            if (text) text.classList.toggle('hidden', isLoading);
+            if (spinner) spinner.classList.toggle('hidden', !isLoading);
+        }
+
+        // Displays information about selected files (Modified for Multiple)
+        function displayFileInfo() {
+            const files = fileInput.files;
+            if (files.length > 0) {
+                if (uploadContainer) uploadContainer.classList.add('hidden'); 
+                if (fileInfoContainer) {
+                     fileInfoContainer.classList.remove('hidden'); 
+                     
+                     let fileListHtml = '<div class="space-y-2">';
+                     
+                     for (let i = 0; i < files.length; i++) {
+                         const file = files[i];
+                         const fileName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name;
+                         const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                         
+                         fileListHtml += `
+                             <div class="flex items-center justify-between bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                                 <div class="flex items-center gap-2">
+                                     <div class="p-1.5 bg-indigo-50 rounded text-indigo-500">
+                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                           <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                         </svg>
+                                     </div>
+                                     <span class="text-sm text-slate-700 font-medium">${escapeHtml(fileName)} <span class="text-xs text-slate-400 font-normal">(${escapeHtml(fileSize)})</span></span>
+                                 </div>
+                             </div>
+                         `;
+                     }
+                     fileListHtml += '</div>';
+                     
+                     // Add Clear All button
+                     fileListHtml += `
+                         <button type="button" onclick="clearFileInfo()" class="mt-2 w-full text-center text-xs text-red-500 hover:text-red-700 font-medium py-1 transition-colors hover:bg-red-50 rounded">
+                             ลบไฟล์ทั้งหมด (Clear All)
+                         </button>
+                     `;
+                     
+                     fileInfoContainer.innerHTML = fileListHtml;
+                }
+            }
+        }
+
+        // Clears selected files
+        function clearFileInfo() {
+            if (fileInput) fileInput.value = ''; 
+            if (fileInfoContainer) {
+                 fileInfoContainer.innerHTML = ''; 
+                 fileInfoContainer.classList.add('hidden'); 
+            }
+            if (uploadContainer) uploadContainer.classList.remove('hidden'); 
+        }
+        
+        // ... (Remaining functions like copySuccessDetails, lightbox, checkStatus are unchanged) ...
+        // (Included implicitly to keep file complete)
+        // ...
+        function closeSuccessModal() {
+            if (successModal) successModal.classList.add('hidden');
+        }
+
+        // ... (Status Check functions remain same) ...
+        function setCheckStatusLoading(isLoading) {
+            const btn = document.getElementById('checkStatusSubmitBtn');
+            const text = document.getElementById('checkStatusBtnText');
+            const spinner = document.getElementById('checkStatusSpinner');
+            if(btn) btn.disabled = isLoading;
+            if(text) text.classList.toggle('hidden', isLoading);
+            if(spinner) spinner.classList.toggle('hidden', !isLoading);
+        }
+
+        function handleCheckStatus(e) {
+            e.preventDefault();
+            setCheckStatusLoading(true);
+            const accessKey = document.getElementById('check-access-key').value;
+            const langToSend = CURRENT_LANG;
+            const resultsContainer = document.getElementById('check-status-results-container');
+            const errorDiv = document.getElementById('check-status-error');
+            const successDiv = document.getElementById('check-status-success');
+            const formContainer = document.getElementById('checkStatusFormContainer');
+
+            // Hide previous results and errors
+            resultsContainer.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+
+            google.script.run
+                .withSuccessHandler(onCheckStatusSuccess)
+                .withFailureHandler(onCheckStatusFailure)
+                .getTicketStatus(accessKey, langToSend);
+        }
+        
+        // Function to reset the form view
+        function resetCheckStatusForm() {
+            const formContainer = document.getElementById('checkStatusFormContainer');
+            const resultsContainer = document.getElementById('check-status-results-container');
+            
+            // Show form, hide results
+            formContainer.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            
+            // Clear inputs if desired (optional)
+            document.getElementById('check-access-key').value = '';
+        }
+        
+        // Helper to extract ID from Drive URL (Duplicate from admin logic for consistency)
+        function getDriveId(url) {
+            if (!url) return null;
+            const match = url.match(/\/d\/(.+?)(\/|$)/) || url.match(/id=([^&]+)/);
+            return match ? match[1] : null;
+        }
+        
+        // ===== LIGHTBOX VARIABLES =====
+        let currentLightboxImages = []; 
+        let currentLightboxIndex = 0;
+
+        // ===== LIGHTBOX COMPONENT HTML =====
+        const lightboxHtml = `
+            <div id="lightbox-modal" class="hidden fixed inset-0 z-[70] bg-black/95 backdrop-blur-md flex items-center justify-center transition-opacity duration-300 select-none">
+                <button id="lightbox-close" class="absolute top-4 right-4 text-white/70 hover:text-white z-[80] transition-colors p-2 rounded-full hover:bg-white/10">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <button id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white z-[80] p-4 rounded-full hover:bg-white/10 transition-all hidden">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <button id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white z-[80] p-4 rounded-full hover:bg-white/10 transition-all hidden">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <div class="relative w-full h-full flex items-center justify-center p-4">
+                    <img id="lightbox-image" src="" alt="Full Preview" class="max-w-full max-h-full object-contain rounded shadow-2xl transition-transform duration-300 scale-95 opacity-0">
+                </div>
+                <div class="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-3 z-[80] pointer-events-none">
+                    <span id="lightbox-counter" class="text-white/80 text-sm font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm"></span>
+                    <a id="lightbox-download" href="#" target="_blank" class="pointer-events-auto bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full backdrop-blur-md border border-white/20 flex items-center gap-2 transition-all font-medium text-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        ดาวน์โหลดไฟล์ต้นฉบับ
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        // ===== LIGHTBOX LOGIC =====
+        function initLightbox() {
+            document.body.insertAdjacentHTML('beforeend', lightboxHtml);
+            
+            const lightboxModal = document.getElementById('lightbox-modal');
+            const lightboxClose = document.getElementById('lightbox-close');
+            const lightboxPrev = document.getElementById('lightbox-prev');
+            const lightboxNext = document.getElementById('lightbox-next');
+            const lightboxImage = document.getElementById('lightbox-image');
+
+            if (lightboxClose) {
+                lightboxClose.addEventListener('click', () => {
+                    lightboxModal.classList.add('hidden');
+                    lightboxImage.classList.remove('scale-100', 'opacity-100');
+                    lightboxImage.classList.add('scale-95', 'opacity-0');
+                });
+            }
+            if (lightboxModal) {
+                lightboxModal.addEventListener('click', (e) => {
+                    if (e.target === lightboxModal) {
+                        lightboxClose.click();
+                    }
+                });
+            }
+            if (lightboxPrev) lightboxPrev.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(-1); });
+            if (lightboxNext) lightboxNext.addEventListener('click', (e) => { e.stopPropagation(); navigateLightbox(1); });
+            
+            document.addEventListener('keydown', (e) => {
+                if (lightboxModal && !lightboxModal.classList.contains('hidden')) {
+                    if (e.key === 'ArrowLeft') navigateLightbox(-1);
+                    if (e.key === 'ArrowRight') navigateLightbox(1);
+                    if (e.key === 'Escape') lightboxClose.click();
+                }
+            });
+        }
+
+        function openLightbox(index) {
+            const lightboxModal = document.getElementById('lightbox-modal');
+            const lightboxImage = document.getElementById('lightbox-image');
+            const lightboxDownload = document.getElementById('lightbox-download');
+            
+            if (!lightboxModal || !lightboxImage || !lightboxDownload || currentLightboxImages.length === 0) return;
+            
+            currentLightboxIndex = index;
+            updateLightboxView();
+            
+            lightboxModal.classList.remove('hidden');
+            // Small delay for transition
+            requestAnimationFrame(() => {
+                lightboxImage.classList.remove('scale-95', 'opacity-0');
+                lightboxImage.classList.add('scale-100', 'opacity-100');
+            });
+        }
+
+        function updateLightboxView() {
+            const currentImg = currentLightboxImages[currentLightboxIndex];
+            const lightboxImage = document.getElementById('lightbox-image');
+            const lightboxDownload = document.getElementById('lightbox-download');
+            const lightboxCounter = document.getElementById('lightbox-counter');
+            const lightboxPrev = document.getElementById('lightbox-prev');
+            const lightboxNext = document.getElementById('lightbox-next');
+
+            if(!currentImg) return;
+            
+            lightboxImage.src = currentImg.src;
+            lightboxDownload.href = currentImg.download;
+            
+            if (lightboxCounter) {
+                lightboxCounter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`;
+            }
+
+            // Show/Hide Nav Buttons based on index
+            if(currentLightboxImages.length > 1) {
+                lightboxPrev.classList.remove('hidden');
+                lightboxNext.classList.remove('hidden');
+            } else {
+                 lightboxPrev.classList.add('hidden');
+                 lightboxNext.classList.add('hidden');
+            }
+        }
+
+        function navigateLightbox(step) {
+            if (currentLightboxImages.length <= 1) return;
+            
+            let newIndex = currentLightboxIndex + step;
+            
+            // Loop logic
+            if (newIndex < 0) newIndex = currentLightboxImages.length - 1;
+            if (newIndex >= currentLightboxImages.length) newIndex = 0;
+            
+            currentLightboxIndex = newIndex;
+            
+            // Add fade out/in effect for smoother transition
+            const lightboxImage = document.getElementById('lightbox-image'); // FIX: Re-declare lightboxImage here
+            lightboxImage.classList.add('opacity-50');
+            setTimeout(() => {
+                updateLightboxView();
+                lightboxImage.classList.remove('opacity-50');
+            }, 150);
+        }
+
+        function onCheckStatusSuccess(response) {
+            setCheckStatusLoading(false);
+            const resultsContainer = document.getElementById('check-status-results-container');
+            const errorDiv = document.getElementById('check-status-error');
+            const successDiv = document.getElementById('check-status-success');
+            const formContainer = document.getElementById('checkStatusFormContainer');
+            
+            resultsContainer.classList.remove('hidden');
+
+            if (response && response.success && response.data) {
+                // Success: Hide form, Show Result
+                formContainer.classList.add('hidden');
+                
+                const rawStatus = response.data.rawStatus;
+                const allColorClasses = [
+                    'bg-green-50', 'border-green-200', 'text-green-800',
+                    'bg-yellow-50', 'border-yellow-200', 'text-yellow-800',
+                    'bg-red-50', 'border-red-200', 'text-red-800',
+                    'bg-white', 'border-slate-200', 'text-slate-800'
+                ];
+                successDiv.classList.remove(...allColorClasses);
+
+                switch (rawStatus) {
+                    case 'กำลังดำเนินการ': successDiv.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-800'); break;
+                    case 'ยกเลิก': successDiv.classList.add('bg-red-50', 'border-red-200', 'text-red-800'); break;
+                    case 'เสร็จสิ้น': successDiv.classList.add('bg-green-50', 'border-green-200', 'text-green-800'); break;
+                    case 'ยังไม่ดำเนินการ': default: successDiv.classList.add('bg-white', 'border-slate-200', 'text-slate-800'); break;
+                }
+
+                // Handle Type Translation Fix
+                let displayType = response.data.type;
+                if (displayType === 'คำร้องเรียน') displayType = TYPE_COMPLAINT_TRANS;
+                else if (displayType === 'ข้อเสนอแนะ') displayType = TYPE_SUGGESTION_TRANS;
+                else if (displayType === 'แจ้งปัญหา') displayType = TYPE_REPORT_TRANS;
+
+                // NEW: Dynamic Date Label Logic
+                let displayDateLabel = LBL_DATE;
+                if (rawStatus !== 'ยังไม่ดำเนินการ') {
+                     // Change label to indicate "Last Update"
+                     displayDateLabel = "อัปเดตล่าสุด (Last Update)";
+                }
+                
+                let html = `
+                    <div class="space-y-4 relative z-10">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-bold opacity-60 uppercase tracking-wider mb-1">${LBL_TICKET_ID}</p>
+                                <span class="text-xl font-bold tracking-tight">${escapeHtml(response.data.ticketId)}</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold opacity-60 uppercase tracking-wider mb-1">${displayDateLabel}</p>
+                                <span class="text-sm font-medium">${escapeHtml(response.data.date)}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 py-2 border-y border-current border-opacity-10">
+                            <div>
+                                <p class="text-xs font-bold opacity-60 uppercase tracking-wider mb-1">${LBL_TYPE}</p>
+                                <span class="font-medium">${escapeHtml(displayType)}</span>
+                            </div>
+                            <div class="text-right"> <!-- Added text-right -->
+                                <p class="text-xs font-bold opacity-60 uppercase tracking-wider mb-1">${LBL_STATUS}</p>
+                                <span class="font-bold">${escapeHtml(response.data.status)}</span>
+                            </div>
+                        </div>`;
+
+                if (response.data.publicComment && response.data.publicComment.trim() !== '') {
+                    html += `
+                        <div class="pt-2">
+                            <p class="text-xs font-bold opacity-60 uppercase tracking-wider mb-2">${LBL_ADMIN_MSG}</p>
+                            <div class="bg-white/60 p-3 rounded-lg border border-current border-opacity-10">
+                                <p class="text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(response.data.publicComment)}</p>
+                            </div>
+                        </div>`;
+                }
+
+                // ===== NEW: ADMIN ATTACHMENTS DISPLAY =====
+                if (response.data.adminFiles && response.data.adminFiles.trim() !== '') {
+                    const urls = response.data.adminFiles.split(',').filter(u => u.trim());
+                    if (urls.length > 0) {
+                        currentLightboxImages = []; // Reset lightbox array
+                        
+                        html += `
+                        <div class="pt-4 mt-2 border-t border-current border-opacity-10">
+                            <p class="text-xs font-bold opacity-60 uppercase tracking-wider mb-3">${LBL_ADMIN_ATTACHMENTS}</p>
+                            <div class="flex flex-wrap gap-3">`;
+                        
+                        urls.forEach((url, i) => {
+                             const safeUrl = escapeHtml(url.trim());
+                             const fileId = getDriveId(url);
+                             let thumbSrc = '';
+                             
+                             if (fileId) {
+                                 thumbSrc = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+                                 const largeSrc = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
+                                 
+                                 currentLightboxImages.push({
+                                     src: largeSrc,
+                                     download: safeUrl
+                                 });
+                                 const lightboxIndex = currentLightboxImages.length - 1;
+
+                                 html += `
+                                    <div onclick="openLightbox(${lightboxIndex})" class="block w-20 h-20 rounded-lg overflow-hidden border border-current border-opacity-20 shadow-sm hover:scale-105 transition-transform bg-white cursor-pointer">
+                                        <img src="${thumbSrc}" class="w-full h-full object-cover" alt="Image ${i+1}" onerror="this.src='https://via.placeholder.com/150?text=File'">
+                                    </div>
+                                 `;
+                             } else {
+                                 // Non-drive link or generic file
+                                 html += `
+                                    <a href="${safeUrl}" target="_blank" class="flex flex-col items-center justify-center w-20 h-20 rounded-lg border border-current border-opacity-20 bg-white/50 hover:bg-white transition-colors text-xs font-bold">
+                                        <svg class="w-6 h-6 mb-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                        ${BTN_OPEN_FILE}
+                                    </a>
+                                 `;
+                             }
+                        });
+
+                        html += `</div></div>`;
+                    }
+                }
+                // ===== END: ADMIN ATTACHMENTS DISPLAY =====
+
+                html += `</div>`;
+                successDiv.innerHTML = html;
+                successDiv.classList.remove('hidden');
+                errorDiv.classList.add('hidden');
+                
+                // Scroll Modal to top to ensure result is visible
+                const modalBody = document.querySelector('#check-status-modal .bg-white');
+                if(modalBody) modalBody.scrollTop = 0;
+
+            } else {
+                // Error: Keep form visible (or show error below it) - but user requested toggle logic
+                // Let's keep form visible on error so they can retry easily
+                errorDiv.textContent = response.message || MSG_FAIL;
+                errorDiv.classList.remove('hidden');
+                successDiv.classList.add('hidden');
+                // Ensure form is visible on error
+                formContainer.classList.remove('hidden');
+            }
+        }
+
+        function onCheckStatusFailure(error) {
+            setCheckStatusLoading(false);
+            const resultsContainer = document.getElementById('check-status-results-container');
+            const errorDiv = document.getElementById('check-status-error');
+            const formContainer = document.getElementById('checkStatusFormContainer');
+            
+            errorDiv.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message;
+            errorDiv.classList.remove('hidden');
+            resultsContainer.classList.remove('hidden');
+            
+            // Ensure form is visible on failure
+            formContainer.classList.remove('hidden');
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initLightbox(); // Initialize Lightbox HTML and Listeners
+
+            const currentLang = '<?= currentLang ?>';
+            const flags = document.querySelectorAll('.lang-flag');
+            flags.forEach(flag => {
+                if (flag.dataset.lang === currentLang) {
+                    flag.classList.remove('border-transparent');
+                    flag.classList.add('border-2', 'border-indigo-500', 'shadow-md'); 
+                } else {
+                     flag.classList.add('border-transparent'); 
+                     flag.classList.remove('border-2', 'border-indigo-500', 'shadow-md');
+                }
+            });
+            // ... rest of initialization code ...
+            
+            google.script.run
+                .withSuccessHandler(list => {
+                    profanityList = list || []; 
+                    console.log("Profanity list loaded:", profanityList.length, "words");
+                })
+                .withFailureHandler(error => { console.error("Failed to load profanity list:", error); })
+                .getProfanityList(); 
+
+            // ===== START: MODIFICATION (Secret Admin Trigger) =====
+            // Secret Admin Access: Double click the title
+            const formTitle = document.getElementById('form-title');
+            if (formTitle) {
+                formTitle.addEventListener('dblclick', () => {
+                    // Use the constant defined above to ensure clean URL
+                    if (WEB_APP_URL && WEB_APP_URL.startsWith('http')) {
+                        window.open(WEB_APP_URL + "?page=admin", "_blank");
+                    } else {
+                        console.error("Invalid Web App URL");
+                    }
+                });
+            }
+            // ===== END: MODIFICATION (Secret Admin Trigger) =====
+
+            const openCheckStatusModalBtn = document.getElementById('openCheckStatusModalBtn');
+            const checkStatusModal = document.getElementById('check-status-modal');
+            const closeCheckStatusModalBtn = document.getElementById('closeCheckStatusModalBtn');
+            const checkStatusForm = document.getElementById('checkStatusForm');
+
+            // Manual Modal Logic
+            const openManualBtn = document.getElementById('openManualBtn');
+            const manualModal = document.getElementById('manual-modal');
+            const closeManualBtn = document.getElementById('closeManualBtn');
+            const understoodBtn = document.getElementById('understoodBtn');
+
+            if (openManualBtn) {
+                openManualBtn.addEventListener('click', () => {
+                    manualModal.classList.remove('hidden');
+                });
+            }
+
+            const closeManual = () => {
+                manualModal.classList.add('hidden');
+            };
+
+            if (closeManualBtn) closeManualBtn.addEventListener('click', closeManual);
+            if (understoodBtn) understoodBtn.addEventListener('click', closeManual);
+            if (manualModal) {
+                manualModal.addEventListener('click', (e) => {
+                    if (e.target === manualModal) closeManual();
+                });
+            }
+
+
+            if (openCheckStatusModalBtn) {
+                openCheckStatusModalBtn.addEventListener('click', () => {
+                    checkStatusModal.classList.remove('hidden');
+                    // Reset UI State on Open
+                    resetCheckStatusForm();
+                    document.getElementById('check-status-error').classList.add('hidden');
+                    document.getElementById('check-status-success').classList.add('hidden');
+                    checkStatusForm.reset();
+                });
+            }
+            if (closeCheckStatusModalBtn) {
+                // Already has onclick handler inline, but this closes modal
+                closeCheckStatusModalBtn.addEventListener('click', () => { 
+                    checkStatusModal.classList.add('hidden'); 
+                });
+            }
+            if (checkStatusModal) {
+                checkStatusModal.addEventListener('click', (e) => { if (e.target === checkStatusModal) checkStatusModal.classList.add('hidden'); });
+            }
+            if (checkStatusForm) {
+                checkStatusForm.addEventListener('submit', handleCheckStatus);
+            }
+        });
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') { return unsafe === null || unsafe === undefined ? '' : String(unsafe); }
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/`/g, "&#96;");
+        }
+        
+        // ===== START: NEW (Copy to Clipboard Function v13) =====
+        /**
+         * Copies the Ticket ID and Access Key from the success modal to the clipboard.
+         */
+        function copySuccessDetails() {
+            const ticketId = document.getElementById('success-ticket-id').textContent;
+            const accessKey = document.getElementById('success-access-key').textContent;
+            
+            // MODIFIED: Copy only Access Key
+            const textToCopy = accessKey;
+
+            // Use the 'document.execCommand' workaround for iFrame compatibility
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.style.position = 'absolute';
+            tempTextarea.style.left = '-9999px';
+            tempTextarea.value = textToCopy;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            
+            try {
+                document.execCommand('copy');
+                
+                // Visual Feedback
+                const btnText = document.getElementById('copyBtnText');
+                const copyIcon = document.getElementById('copy-icon-svg');
+                const checkIcon = document.getElementById('check-icon-svg');
+                
+                // MODIFIED: Use injected translation for 'Copied!' message
+                if(btnText) btnText.textContent = LBL_COPIED;
+                
+                if(copyIcon) copyIcon.classList.add('hidden');
+                if(checkIcon) checkIcon.classList.remove('hidden');
+
+                // Revert back after 2 seconds
+                setTimeout(() => {
+                    // MODIFIED: Use LBL_COPY to revert to correct language
+                    if(btnText) btnText.textContent = LBL_COPY;
+                    if(copyIcon) copyIcon.classList.remove('hidden');
+                    if(checkIcon) checkIcon.classList.add('hidden');
+                }, 2000);
+
+            } catch (err) {
+                console.error('Failed to copy to clipboard:', err);
+                // You could show an error, but for simplicity we'll just log it.
+                const btnText = document.getElementById('copyBtnText');
+                // MODIFIED: Use injected translation for 'Failed' message
+                if(btnText) btnText.textContent = LBL_COPY_FAIL;
+                
+                setTimeout(() => {
+                      // MODIFIED: Use LBL_COPY to revert to correct language
+                      if(btnText) btnText.textContent = LBL_COPY;
+                }, 2000);
+            }
+
+            document.body.removeChild(tempTextarea);
+        }
+        // ===== END: NEW (Copy to Clipboard Function v13) =====
+    </script>
+</body>
+</html>
